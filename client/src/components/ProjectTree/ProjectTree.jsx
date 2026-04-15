@@ -1,15 +1,8 @@
 import { useState } from 'react';
-import { ChevronRight, ChevronDown, Layers, Plus, Trash2 } from 'lucide-react';
+import { Layers, Plus, Trash2, FolderOpen } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  setSelectedPart,
-  selectSelectedPartId,
-} from '../../features/products/productsSlice.js';
-import {
-  useGetPartsQuery,
-  useCreatePartMutation,
-  useDeletePartMutation,
-} from '../../features/products/productsApi.js';
+import { setSelectedPart, selectSelectedPartId } from '../../features/products/productsSlice.js';
+import { useGetPartsQuery, useCreatePartMutation, useDeletePartMutation } from '../../features/products/productsApi.js';
 import toast from 'react-hot-toast';
 
 function PartItem({ part, product, isSelected, onSelect }) {
@@ -29,19 +22,53 @@ function PartItem({ part, product, isSelected, onSelect }) {
   return (
     <div
       onClick={() => onSelect(part._id)}
-      className={`flex items-center gap-2 px-3 py-2 cursor-pointer rounded-lg group transition-colors
-        ${isSelected
-          ? 'bg-blue-600 text-white'
-          : 'text-gray-700 hover:bg-gray-100'}`}
+      className="group"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '7px 10px',
+        cursor: 'pointer',
+        borderRadius: '6px',
+        background: isSelected ? 'linear-gradient(90deg, rgba(19, 64, 116, 0.30) 0%, rgba(19, 64, 116, 0.10) 100%)' : 'transparent',
+        borderLeft: isSelected ? '2px solid var(--c-carolina)' : '2px solid transparent',
+        transition: 'background 0.15s, border-color 0.15s',
+        marginLeft: '-1px',
+      }}
+      onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--c-surface)'; }}
+      onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
     >
-      <Layers size={14} className={isSelected ? 'text-white' : 'text-blue-500'} />
-      <span className="text-sm font-medium flex-1 truncate">{part.name}</span>
+      <Layers
+        size={13}
+        style={{ color: isSelected ? 'var(--c-carolina)' : 'var(--c-text-muted)', flexShrink: 0 }}
+      />
+      <span
+        style={{
+          fontSize: '0.8125rem',
+          fontFamily: '"Inter", sans-serif',
+          fontWeight: isSelected ? 600 : 400,
+          color: isSelected ? 'var(--c-text)' : 'var(--c-text-secondary)',
+          flex: 1,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {part.name}
+      </span>
       <button
         onClick={handleDelete}
-        className={`opacity-0 group-hover:opacity-100 transition
-          ${isSelected ? 'text-blue-200 hover:text-white' : 'text-red-400 hover:text-red-600'}`}
+        style={{
+          color: 'var(--c-text-muted)',
+          opacity: 0,
+          transition: 'opacity 0.2s, color 0.2s',
+          padding: '2px',
+        }}
+        className="group-hover:opacity-100"
+        onMouseEnter={e => e.currentTarget.style.color = '#f87171'}
+        onMouseLeave={e => e.currentTarget.style.color = 'var(--c-text-muted)'}
       >
-        <Trash2 size={12} />
+        <Trash2 size={11} />
       </button>
     </div>
   );
@@ -64,21 +91,26 @@ export default function ProjectTree({ product }) {
     }
   };
 
-  if (isLoading) return <div className="p-4 text-sm text-gray-400">Loading...</div>;
+  if (isLoading) return <div style={{ padding: '12px', fontSize: '0.8125rem', color: 'var(--c-text-muted)' }}>Loading...</div>;
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between px-3 py-2.5 border-b bg-gray-50">
-        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Parts</span>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--c-surface-low)' }}>
+
+      {/* Header — label-technical style */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid var(--c-border-soft)', flexShrink: 0 }}>
+        <span className="label-technical">Project Tree</span>
         <button
           onClick={handleAddPart}
-          className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium"
+          style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: 'var(--c-carolina)', fontFamily: '"Inter", sans-serif', fontWeight: 500, cursor: 'pointer', transition: 'opacity 0.2s' }}
+          onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
+          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
         >
-          <Plus size={13} /> Add
+          <Plus size={12} strokeWidth={2.5} /> Add Part
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+      {/* Part list */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
         {parts.map((part) => (
           <PartItem
             key={part._id}
@@ -89,10 +121,10 @@ export default function ProjectTree({ product }) {
           />
         ))}
         {parts.length === 0 && (
-          <div className="text-center py-8 px-4">
-            <Layers size={32} className="text-gray-200 mx-auto mb-2" />
-            <p className="text-sm text-gray-400">No parts yet</p>
-            <p className="text-xs text-gray-300 mt-1">Add a part to start uploading files</p>
+          <div style={{ textAlign: 'center', padding: '28px 12px' }}>
+            <FolderOpen size={28} style={{ margin: '0 auto 8px', color: 'var(--c-text-muted)', opacity: 0.4 }} />
+            <p style={{ fontSize: '0.8125rem', color: 'var(--c-text-secondary)' }}>No parts yet</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--c-text-muted)', marginTop: '3px' }}>Add a part to start uploading files</p>
           </div>
         )}
       </div>

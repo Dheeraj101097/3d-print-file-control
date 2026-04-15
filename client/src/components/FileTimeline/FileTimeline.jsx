@@ -50,7 +50,7 @@ export default function FileTimeline({ fileAsset, versions, currentVersionId }) 
   return (
     <div className="relative">
       {/* Vertical line */}
-      <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gray-200" />
+      <div className="absolute left-5 top-0 bottom-0 w-[1px] bg-theme-border-soft" />
 
       <div className="space-y-4">
         {versions.map((v, i) => {
@@ -59,36 +59,36 @@ export default function FileTimeline({ fileAsset, versions, currentVersionId }) 
           return (
             <div key={v._id} className="relative flex gap-4">
               {/* Timeline dot */}
-              <div className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 shrink-0
-                ${isCurrent ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-300'}`}>
+              <div className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 shrink-0 transition-colors
+                ${isCurrent ? 'bg-theme-action border-theme-action shadow-md' : 'bg-theme-surface border-theme-border-soft'}`}>
                 {isCurrent ? (
                   <CheckCircle2 size={16} className="text-white" />
                 ) : (
-                  <Clock size={14} className="text-gray-400" />
+                  <Clock size={14} className="text-theme-text-muted" />
                 )}
               </div>
 
               {/* Content */}
-              <div className={`flex-1 mb-2 rounded-lg border p-3 shadow-sm
-                ${isCurrent ? 'border-blue-300 bg-blue-50' : 'border-gray-200 bg-white'}`}>
+              <div className={`flex-1 mb-2 rounded-xl border p-3 shadow-sm transition-colors
+                ${isCurrent ? 'border-theme-action/50 bg-theme-action/10' : 'border-theme-border-soft bg-theme-surface-low'}`}>
 
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className={`font-mono font-bold text-sm
-                        ${isCurrent ? 'text-blue-700' : 'text-gray-700'}`}>
+                        ${isCurrent ? 'text-theme-action' : 'text-theme-text-secondary'}`}>
                         v{String(v.versionNumber).padStart(2, '0')}
                       </span>
                       {v.versionLabel && (
-                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                        <span className="text-xs bg-theme-bg border border-theme-border-soft text-theme-text-secondary px-2 py-0.5 rounded-md">
                           {v.versionLabel}
                         </span>
                       )}
                       {isCurrent && (
-                        <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded">Current</span>
+                        <span className="text-xs bg-theme-action text-white px-2 py-0.5 rounded-md">Current</span>
                       )}
                     </div>
-                    <div className="flex flex-wrap gap-3 mt-1 text-xs text-gray-400">
+                    <div className="flex flex-wrap gap-3 mt-1.5 text-xs text-theme-text-muted">
                       <span>{format(new Date(v.createdAt), 'MMM d, yyyy HH:mm')}</span>
                       <span>{formatBytes(v.fileSizeBytes)}</span>
                       {v.uploadedBy && <span>by {v.uploadedBy.displayName}</span>}
@@ -96,7 +96,7 @@ export default function FileTimeline({ fileAsset, versions, currentVersionId }) 
                     </div>
                     {/* gcode metadata */}
                     {v.gcodeMetadata?.layerHeight && (
-                      <div className="flex flex-wrap gap-3 mt-1 text-xs text-indigo-500">
+                      <div className="flex flex-wrap gap-3 mt-2 text-xs text-theme-action/70 font-medium">
                         {v.gcodeMetadata.layerHeight && <span>Layer: {v.gcodeMetadata.layerHeight}mm</span>}
                         {v.gcodeMetadata.estimatedPrintTimeSeconds && (
                           <span>Print: ~{formatTime(v.gcodeMetadata.estimatedPrintTimeSeconds)}</span>
@@ -113,7 +113,7 @@ export default function FileTimeline({ fileAsset, versions, currentVersionId }) 
                   <div className="flex gap-1 shrink-0">
                     <button
                       onClick={() => handleDownload(v._id)}
-                      className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+                      className="p-1.5 text-theme-text-muted hover:text-theme-action hover:bg-theme-action/10 rounded transition"
                       title="Download this version"
                     >
                       <Download size={15} />
@@ -122,7 +122,7 @@ export default function FileTimeline({ fileAsset, versions, currentVersionId }) 
                       <button
                         onClick={() => handleRollback(v)}
                         disabled={isRollingBack}
-                        className="p-1.5 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded disabled:opacity-50"
+                        className="p-1.5 text-theme-text-muted hover:text-orange-400 hover:bg-orange-400/10 rounded disabled:opacity-50 transition"
                         title="Restore to this version"
                       >
                         <RotateCcw size={15} />

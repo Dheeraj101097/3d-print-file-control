@@ -1,47 +1,102 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Box, Plus, Folder, Clock, Layers } from 'lucide-react';
+import { Box, Plus, Folder, Clock, Layers, X, Tag } from 'lucide-react';
 import {
   useGetProductsQuery,
   useCreateProductMutation,
 } from '../features/products/productsApi.js';
 import toast from 'react-hot-toast';
 
+/* ── Project Card ────────────────────────────────────────────── */
 function ProductCard({ product, onClick }) {
   return (
     <div
       onClick={onClick}
-      className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md hover:border-blue-200 cursor-pointer transition-all"
+      className="cursor-pointer transition-all duration-200 group animate-fade-in"
+      style={{
+        background: 'var(--c-surface)',
+        borderRadius: '12px',
+        padding: '20px',
+        boxShadow: 'var(--shadow-card)',
+        border: '1px solid var(--c-border)',
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.boxShadow = 'var(--shadow-ambient)';
+        e.currentTarget.style.transform = 'translateY(-2px)';
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.boxShadow = 'var(--shadow-card)';
+        e.currentTarget.style.transform = 'translateY(0)';
+      }}
     >
+      {/* Header */}
       <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Folder size={18} className="text-yellow-500" />
-          <h3 className="font-semibold text-gray-900 truncate">{product.name}</h3>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div
+            className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{ background: 'var(--c-surface-low)' }}
+          >
+            <Folder size={15} style={{ color: 'var(--c-carolina)' }} />
+          </div>
+          <h3
+            className="truncate font-display font-semibold"
+            style={{ fontFamily: '"Space Grotesk", sans-serif', fontWeight: 600, fontSize: '0.9375rem', color: 'var(--c-text)' }}
+          >
+            {product.name}
+          </h3>
         </div>
-        <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded font-mono">
+        <span
+          className="flex-shrink-0 ml-2 font-mono text-[10px] px-2 py-0.5 rounded"
+          style={{
+            background: 'var(--c-surface-low)',
+            color: 'var(--c-text-muted)',
+            letterSpacing: '0.04em',
+          }}
+        >
           {product.slug}
         </span>
       </div>
 
+      {/* Description */}
       {product.description && (
-        <p className="text-sm text-gray-500 mb-3 line-clamp-2">{product.description}</p>
+        <p
+          className="text-sm mb-3 line-clamp-2"
+          style={{ color: 'var(--c-text-secondary)', lineHeight: 1.5 }}
+        >
+          {product.description}
+        </p>
       )}
 
-      <div className="flex flex-wrap gap-1 mb-3">
-        {product.tags?.map((tag) => (
-          <span key={tag} className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded">
-            {tag}
-          </span>
-        ))}
-      </div>
+      {/* Tags */}
+      {product.tags?.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {product.tags.map((tag) => (
+            <span
+              key={tag}
+              className="text-xs px-2 py-0.5 rounded-md"
+              style={{
+                background: 'rgba(19, 64, 116, 0.12)',
+                color: 'var(--c-carolina)',
+                fontFamily: '"Inter", sans-serif',
+              }}
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
 
-      <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-100">
-        <div className="flex items-center gap-1">
+      {/* Footer — no border line per design rules, use spacing */}
+      <div
+        className="flex items-center justify-between text-xs pt-3 mt-auto"
+        style={{ color: 'var(--c-text-muted)', borderTop: '1px solid var(--c-border-soft)' }}
+      >
+        <div className="flex items-center gap-1.5">
           <Layers size={11} />
           <span>{product.totalFiles || 0} file{product.totalFiles !== 1 ? 's' : ''}</span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <Clock size={11} />
           <span>{format(new Date(product.updatedAt), 'MMM d, yyyy')}</span>
         </div>
@@ -50,6 +105,7 @@ function ProductCard({ product, onClick }) {
   );
 }
 
+/* ── Dashboard ───────────────────────────────────────────────── */
 export default function Dashboard() {
   const navigate = useNavigate();
   const [showCreate, setShowCreate] = useState(false);
@@ -74,91 +130,207 @@ export default function Dashboard() {
   const products = data?.products || [];
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <Box size={20} className="text-blue-600" />
-            My Projects
-          </h1>
-          <p className="text-xs text-gray-500 mt-0.5">Your 3D print asset projects</p>
+    <div style={{ minHeight: '100vh', background: 'var(--c-bg)' }}>
+      {/* Page inner container */}
+      <div className="max-w-5xl mx-auto px-6 py-10">
+
+        {/* Page Header */}
+        <div className="flex items-end justify-between mb-8">
+          <div>
+            <p
+              className="label-technical mb-1"
+              style={{ color: 'var(--c-text-muted)' }}
+            >
+              Version Control System
+            </p>
+            <h1
+              style={{
+                fontFamily: '"Space Grotesk", sans-serif',
+                fontWeight: 700,
+                fontSize: '1.75rem',
+                color: 'var(--c-text)',
+                letterSpacing: '-0.03em',
+                lineHeight: 1.2,
+              }}
+            >
+              Project Workspace
+            </h1>
+            <p style={{ fontSize: '0.875rem', color: 'var(--c-text-secondary)', marginTop: '4px' }}>
+              Oversee your 3D repository architecture
+            </p>
+          </div>
+
+          <button
+            onClick={() => setShowCreate(true)}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus size={14} strokeWidth={2.5} />
+            New Project
+          </button>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
-        >
-          <Plus size={16} /> New Project
-        </button>
+
+        {/* States */}
+        {isLoading && (
+          <div
+            className="text-center py-20"
+            style={{ color: 'var(--c-text-muted)', fontFamily: '"Inter", sans-serif' }}
+          >
+            Loading projects...
+          </div>
+        )}
+        {isError && (
+          <div className="text-center py-20 text-red-400">Failed to load projects.</div>
+        )}
+
+        {/* Empty state */}
+        {!isLoading && products.length === 0 && (
+          <div
+            className="text-center py-20 rounded-xl"
+            style={{
+              background: 'var(--c-surface-low)',
+              border: '2px dashed var(--c-border)',
+            }}
+          >
+            <Box size={40} style={{ color: 'var(--c-text-muted)', margin: '0 auto 12px' }} />
+            <p style={{ color: 'var(--c-text-secondary)', fontSize: '0.9375rem' }}>
+              No projects yet.
+            </p>
+            <p style={{ color: 'var(--c-text-muted)', fontSize: '0.8125rem', marginTop: '4px' }}>
+              Initialize a new version-controlled workspace.
+            </p>
+          </div>
+        )}
+
+        {/* Cards grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {products.map((p) => (
+            <ProductCard
+              key={p._id}
+              product={p}
+              onClick={() => navigate(`/products/${p.slug}`)}
+            />
+          ))}
+        </div>
       </div>
 
-      {/* Create modal */}
+      {/* ── New Project Modal ─────────────────────────────────── */}
       {showCreate && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4">New Project</h2>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <input
-                required
-                placeholder="Name (e.g. Lamp, Bracket-v2)"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full border rounded px-3 py-2 text-sm"
-              />
-              <textarea
-                rows={2}
-                placeholder="Description (optional)"
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="w-full border rounded px-3 py-2 text-sm resize-none"
-              />
-              <input
-                placeholder="Tags (comma-separated, optional)"
-                value={form.tags}
-                onChange={(e) => setForm({ ...form, tags: e.target.value })}
-                className="w-full border rounded px-3 py-2 text-sm"
-              />
-              <div className="flex gap-2 justify-end">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(10, 22, 40, 0.75)', backdropFilter: 'blur(8px)' }}
+          onClick={(e) => e.target === e.currentTarget && setShowCreate(false)}
+        >
+          <div
+            className="w-full max-w-md animate-fade-in"
+            style={{
+              background: 'var(--c-surface)',
+              borderRadius: '16px',
+              boxShadow: 'var(--shadow-modal)',
+              border: '1px solid var(--c-border)',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Modal header */}
+            <div
+              className="flex items-start justify-between px-6 py-5"
+              style={{ borderBottom: '1px solid var(--c-border-soft)' }}
+            >
+              <div>
+                <h2
+                  style={{
+                    fontFamily: '"Space Grotesk", sans-serif',
+                    fontWeight: 700,
+                    fontSize: '1.125rem',
+                    color: 'var(--c-text)',
+                    letterSpacing: '-0.02em',
+                  }}
+                >
+                  New Project
+                </h2>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--c-text-muted)', marginTop: '2px' }}>
+                  Initialize a new version-controlled workspace.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowCreate(false)}
+                className="rounded-full w-7 h-7 flex items-center justify-center transition-theme"
+                style={{ color: 'var(--c-text-muted)', background: 'var(--c-surface-low)' }}
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <form onSubmit={handleCreate} className="px-6 py-5 space-y-4">
+              <div>
+                <label className="label-technical block mb-2">Project Name</label>
+                <input
+                  required
+                  placeholder="e.g. Turbine_Assembly_01"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="input-field"
+                />
+              </div>
+
+              <div>
+                <label className="label-technical block mb-2">Description</label>
+                <textarea
+                  rows={3}
+                  placeholder="Define the scope and primary objectives..."
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className="input-field resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="label-technical block mb-2">
+                  <Tag size={9} className="inline mr-1" />
+                  Tags
+                </label>
+                <input
+                  placeholder="Prototype, Actuator, Nylon-PA12... (comma-separated)"
+                  value={form.tags}
+                  onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                  className="input-field"
+                />
+                {/* Preview tags */}
+                {form.tags && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {form.tags.split(',').map(t => t.trim()).filter(Boolean).map(tag => (
+                      <span
+                        key={tag}
+                        className="text-xs px-2 py-0.5 rounded-md"
+                        style={{ background: 'rgba(19,64,116,0.12)', color: 'var(--c-carolina)' }}
+                      >
+                        {tag} ×
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3 justify-end pt-2">
                 <button
                   type="button"
                   onClick={() => setShowCreate(false)}
-                  className="px-4 py-2 border rounded text-sm hover:bg-gray-50"
+                  className="btn-secondary"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isCreating}
-                  className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+                  className="btn-primary"
                 >
-                  {isCreating ? 'Creating...' : 'Create'}
+                  {isCreating ? 'Creating...' : 'Create Repository'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
-      {isLoading && (
-        <div className="text-center py-16 text-gray-400">Loading projects...</div>
-      )}
-      {isError && (
-        <div className="text-center py-16 text-red-500">Failed to load projects.</div>
-      )}
-      {!isLoading && products.length === 0 && (
-        <div className="text-center py-16">
-          <Box size={48} className="text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500">No projects yet. Create your first one.</p>
-        </div>
-      )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {products.map((p) => (
-          <ProductCard
-            key={p._id}
-            product={p}
-            onClick={() => navigate(`/products/${p.slug}`)}
-          />
-        ))}
-      </div>
     </div>
   );
 }

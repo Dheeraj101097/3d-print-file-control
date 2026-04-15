@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, CheckCircle2, Loader2, Layers, X, FileText } from 'lucide-react';
+import { Upload, CheckCircle2, Loader2, X, FileText, CloudUpload, Info } from 'lucide-react';
 import { useGetPartsQuery, useCreatePartMutation } from '../../features/products/productsApi.js';
 import { useGetPartFilesQuery, filesApi } from '../../features/files/filesApi.js';
 import { setSelectedPart } from '../../features/products/productsSlice.js';
@@ -8,7 +8,7 @@ import { useDispatch } from 'react-redux';
 import axiosInstance from '../../api/axiosInstance.js';
 import toast from 'react-hot-toast';
 
-// Mirror the server naming logic for live preview
+/* ── Helpers ──────────────────────────────────────────────── */
 function previewName({ partName, partCreatedAt, fileType, piecesPerPrint, versionNumber }) {
   const safe = (partName || 'file')
     .toLowerCase().replace(/[\s_]+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-{2,}/g, '-').slice(0, 40);
@@ -27,6 +27,7 @@ const FILE_TYPES = {
   gcode: 'G-Code · Print File',
   gco: 'G-Code · Print File',
 };
+
 const ACCEPT = {
   'application/octet-stream': ['.stl', '.step', '.stp'],
   'text/plain': ['.gcode', '.gco'],
@@ -41,6 +42,7 @@ function detectType(filename) {
   return 'other';
 }
 
+/* ── Component ────────────────────────────────────────────── */
 export default function UploadWizard({ product, initialPartId, onSuccess, onClose }) {
   const dispatch = useDispatch();
 
@@ -63,19 +65,12 @@ export default function UploadWizard({ product, initialPartId, onSuccess, onClos
 
   const selectedPart = parts.find(p => p._id === selectedPartId);
 
-  // Auto-fill label from part name unless user has manually changed it
   useEffect(() => {
-    if (!labelEdited && selectedPart) {
-      setFileLabel(selectedPart.name);
-    }
+    if (!labelEdited && selectedPart) setFileLabel(selectedPart.name);
   }, [selectedPart, labelEdited]);
 
-  // Reset label-edited flag when part changes
-  useEffect(() => {
-    setLabelEdited(false);
-  }, [selectedPartId]);
+  useEffect(() => { setLabelEdited(false); }, [selectedPartId]);
 
-  // Find if a matching slot already exists (determines version number)
   const piecesNum = piecesPerPrint ? parseInt(piecesPerPrint) : null;
   const existingSlot = (fileType && selectedPartId && fileLabel)
     ? existingFiles.find(f =>
@@ -88,13 +83,7 @@ export default function UploadWizard({ product, initialPartId, onSuccess, onClos
   const nextVersion = existingSlot ? existingSlot.versionCount + 1 : 1;
 
   const previewFilename = (selectedPart && fileType && fileLabel)
-    ? previewName({
-        partName: fileLabel,
-        partCreatedAt: selectedPart.createdAt,
-        fileType,
-        piecesPerPrint: piecesNum,
-        versionNumber: nextVersion,
-      })
+    ? previewName({ partName: fileLabel, partCreatedAt: selectedPart.createdAt, fileType, piecesPerPrint: piecesNum, versionNumber: nextVersion })
     : null;
 
   const onDrop = useCallback((accepted) => {
@@ -104,9 +93,7 @@ export default function UploadWizard({ product, initialPartId, onSuccess, onClos
     setFileType(detectType(f.name));
   }, []);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop, accept: ACCEPT, maxFiles: 1,
-  });
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: ACCEPT, maxFiles: 1 });
 
   const handleCreatePart = async () => {
     if (!newPartName.trim()) return;
@@ -125,25 +112,20 @@ export default function UploadWizard({ product, initialPartId, onSuccess, onClos
     if (!file || !selectedPartId) return;
     setIsUploading(true);
     setProgress(0);
-
     const form = new FormData();
     form.append('file', file);
     form.append('partId', selectedPartId);
     form.append('fileLabel', fileLabel);
     if (piecesPerPrint) form.append('piecesPerPrint', piecesPerPrint);
     if (note) form.append('commitMessage', note);
-
     try {
       const { data } = await axiosInstance.post('/files/upload', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (e) => e.total && setProgress(Math.round((e.loaded / e.total) * 100)),
       });
-
-      // Sync selected part to Redux so ProductView shows the right part on navigate-back
       dispatch(setSelectedPart(selectedPartId));
       dispatch(filesApi.util.invalidateTags([{ type: 'FileAsset', id: selectedPartId }]));
       setResult(data);
-
       if (data.sameAsPrevious) {
         toast(`Identical content to previous version — saved as ${data.canonicalName}`, { icon: '⚠️' });
       } else {
@@ -159,30 +141,21 @@ export default function UploadWizard({ product, initialPartId, onSuccess, onClos
 
   const canSave = file && selectedPartId && fileLabel.trim() && !isUploading;
 
-  // ── Success screen ──────────────────────────────────────────────────────────
+  /* ── Success screen ─────────────────────────────────────── */
   if (result) {
     return (
-      <div className="text-center py-8 space-y-3">
-        <CheckCircle2 size={44} className="mx-auto text-green-500" />
-        <h3 className="text-lg font-semibold text-gray-800">File saved!</h3>
-        <div className="inline-block bg-gray-50 border rounded-lg px-4 py-2 font-mono text-sm text-gray-700">
+      <div style={{ textAlign: 'center', padding: '32px 24px', fontFamily: '"Inter", sans-serif' }}>
+        <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'rgba(34,197,94,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+          <CheckCircle2 size={26} style={{ color: '#4ade80' }} />
+        </div>
+        <h3 style={{ fontFamily: '"Space Grotesk", sans-serif', fontWeight: 700, fontSize: '1.125rem', color: 'var(--c-text)', marginBottom: '8px' }}>File Saved!</h3>
+        <div style={{ display: 'inline-block', background: 'var(--c-surface-low)', border: '1px solid var(--c-border)', borderRadius: '8px', padding: '8px 16px', fontFamily: '"Space Grotesk", monospace', fontSize: '0.8125rem', color: 'var(--c-text-secondary)', marginBottom: '12px' }}>
           {result.canonicalName}
         </div>
-        {result.sameAsPrevious && (
-          <p className="text-xs text-amber-500">⚠️ Content is identical to the previous version.</p>
-        )}
-        {!result.sameAsPrevious && result.deduplicated && (
-          <p className="text-xs text-gray-400">Content already stored — no duplicate bytes used.</p>
-        )}
-        <div className="flex gap-2 justify-center pt-2">
-          <button
-            onClick={() => {
-              setFile(null); setFileType(null); setResult(null);
-              setNote(''); setPiecesPerPrint('');
-              setLabelEdited(false);
-            }}
-            className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50"
-          >
+        {result.sameAsPrevious && <p style={{ fontSize: '0.75rem', color: '#fb923c', marginBottom: '8px' }}>⚠️ Content is identical to the previous version.</p>}
+        {!result.sameAsPrevious && result.deduplicated && <p style={{ fontSize: '0.75rem', color: 'var(--c-text-muted)', marginBottom: '8px' }}>Content already stored — no duplicate bytes used.</p>}
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '16px' }}>
+          <button onClick={() => { setFile(null); setFileType(null); setResult(null); setNote(''); setPiecesPerPrint(''); setLabelEdited(false); }} className="btn-secondary">
             Upload another
           </button>
         </div>
@@ -190,186 +163,120 @@ export default function UploadWizard({ product, initialPartId, onSuccess, onClos
     );
   }
 
-  // ── Main form ───────────────────────────────────────────────────────────────
+  /* ── Main form ─────────────────────────────────────────── */
   return (
-    <div className="space-y-5">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', fontFamily: '"Inter", sans-serif' }}>
 
       {/* Part selector */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Part</label>
+        <label className="label-technical" style={{ display: 'block', marginBottom: '8px' }}>Select Part</label>
         {showNewPart ? (
-          <div className="flex gap-2">
-            <input
-              autoFocus
-              value={newPartName}
-              onChange={(e) => setNewPartName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleCreatePart()}
-              placeholder="Part name (e.g. logo, base, bracket)"
-              className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-            <button onClick={handleCreatePart}
-              className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
-              Create
-            </button>
-            <button onClick={() => setShowNewPart(false)}
-              className="px-3 py-2 border rounded-lg text-sm hover:bg-gray-50">
-              Cancel
-            </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input autoFocus value={newPartName} onChange={e => setNewPartName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleCreatePart()} placeholder="Part name (e.g. logo, base)" className="input-field" style={{ flex: 1 }} />
+            <button onClick={handleCreatePart} className="btn-primary" style={{ padding: '8px 14px' }}>Create</button>
+            <button onClick={() => setShowNewPart(false)} className="btn-secondary" style={{ padding: '8px 14px' }}>Cancel</button>
           </div>
         ) : (
-          <div className="flex gap-2">
-            <select
-              value={selectedPartId}
-              onChange={(e) => setSelectedPartId(e.target.value)}
-              className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-            >
-              <option value="">Select a part...</option>
-              {parts.map(p => (
-                <option key={p._id} value={p._id}>{p.name}</option>
-              ))}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <select value={selectedPartId} onChange={e => setSelectedPartId(e.target.value)} className="input-field" style={{ flex: 1 }}>
+              <option value="">Chassis Assembly V4</option>
+              {parts.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
             </select>
-            <button onClick={() => setShowNewPart(true)}
-              className="px-3 py-2 border rounded-lg text-sm hover:bg-gray-50 whitespace-nowrap text-blue-600">
-              + New part
-            </button>
+            <button onClick={() => setShowNewPart(true)} className="btn-secondary" style={{ whiteSpace: 'nowrap' }}>+ New Part</button>
           </div>
         )}
       </div>
 
-      {/* File drop zone */}
+      {/* Dropzone */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">File</label>
         {file ? (
-          <div className="flex items-center gap-3 border rounded-lg px-4 py-3 bg-gray-50">
-            <FileText size={18} className="text-blue-500 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-800 truncate">{file.name}</p>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {FILE_TYPES[fileType] || fileType} · {(file.size / 1024).toFixed(1)} KB
-              </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', border: '1px solid var(--c-border)', borderRadius: '8px', padding: '12px 16px', background: 'var(--c-surface-low)' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(19,64,116,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <FileText size={16} style={{ color: 'var(--c-carolina)' }} />
             </div>
-            <button onClick={() => { setFile(null); setFileType(null); }}
-              className="text-gray-400 hover:text-red-500 shrink-0">
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--c-text)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{file.name}</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--c-text-muted)', marginTop: '2px' }}>{FILE_TYPES[fileType] || fileType} · {(file.size / 1024).toFixed(1)} KB</p>
+            </div>
+            <button onClick={() => { setFile(null); setFileType(null); }} style={{ color: 'var(--c-text-muted)', flexShrink: 0 }} onMouseEnter={e => e.currentTarget.style.color = '#f87171'} onMouseLeave={e => e.currentTarget.style.color = 'var(--c-text-muted)'}>
               <X size={15} />
             </button>
           </div>
         ) : (
-          <div
-            {...getRootProps()}
-            className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition
-              ${isDragActive ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'}`}
-          >
+          <div {...getRootProps()} style={{ border: `2px dashed ${isDragActive ? 'var(--c-carolina)' : 'var(--c-border)'}`, borderRadius: '8px', padding: '36px 24px', textAlign: 'center', cursor: 'pointer', background: isDragActive ? 'rgba(141,169,196,0.06)' : 'transparent', transition: 'border-color 0.2s, background 0.2s' }}>
             <input {...getInputProps()} />
-            <Upload size={28} className="mx-auto text-gray-300 mb-2" />
-            <p className="text-sm text-gray-500">
-              {isDragActive ? 'Drop it here' : 'Drag & drop or click to browse'}
+            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--c-surface-low)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+              <CloudUpload size={18} style={{ color: isDragActive ? 'var(--c-carolina)' : 'var(--c-text-muted)' }} />
+            </div>
+            <p style={{ fontSize: '0.9375rem', color: 'var(--c-text-secondary)', fontWeight: 500, marginBottom: '4px' }}>
+              {isDragActive ? 'Drop it here' : 'Drag and drop your 3D files here'}
             </p>
-            <p className="text-xs text-gray-400 mt-1">.stl · .step · .gcode</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--c-text-muted)', marginBottom: '12px' }}>Supports .STL, .GCODE, .OBJ (MAX 500MB)</p>
+            <button type="button" style={{ padding: '6px 18px', borderRadius: '6px', border: '1px solid var(--c-border)', background: 'var(--c-surface)', color: 'var(--c-text-secondary)', fontSize: '0.6875rem', cursor: 'pointer', fontFamily: '"Inter", sans-serif', letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: 600 }}>
+              Browse Files
+            </button>
           </div>
         )}
       </div>
 
-      {/* File label + pieces (shown once file is selected) */}
+      {/* Metadata */}
       {file && (
-        <>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                File name
-                <span className="text-xs text-gray-400 font-normal ml-1">(used in saved filename)</span>
-              </label>
-              <input
-                type="text"
-                value={fileLabel}
-                onChange={(e) => { setFileLabel(e.target.value); setLabelEdited(true); }}
-                placeholder="e.g. logo, base-v2"
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-              <p className="text-xs text-gray-400 mt-1">
-                Change to create a separate file row
-              </p>
-            </div>
-
-            {fileType === 'gcode' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Pieces per print
-                  <span className="text-xs text-gray-400 font-normal ml-1">(optional)</span>
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={piecesPerPrint}
-                  onChange={(e) => setPiecesPerPrint(e.target.value)}
-                  placeholder="e.g. 6"
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
-                <p className="text-xs text-gray-400 mt-1">How many fit on the print bed?</p>
-              </div>
-            )}
-          </div>
-
-          {/* Note */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Note
-              <span className="text-xs text-gray-400 font-normal ml-1">(optional)</span>
-            </label>
-            <textarea
-              rows={2}
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="What changed? e.g. adjusted support angle"
-              className="w-full border rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
+            <label className="label-technical" style={{ display: 'block', marginBottom: '6px' }}>File Label</label>
+            <input type="text" value={fileLabel} onChange={e => { setFileLabel(e.target.value); setLabelEdited(true); }} placeholder="e.g. logo, base-v2" className="input-field" />
+            <p style={{ fontSize: '0.6875rem', color: 'var(--c-text-muted)', marginTop: '4px' }}>Change to create a separate file row</p>
           </div>
-
-          {/* Filename preview + slot info */}
+          {fileType === 'gcode' && (
+            <div>
+              <label className="label-technical" style={{ display: 'block', marginBottom: '6px' }}>Pieces per Print</label>
+              <input type="number" min="1" value={piecesPerPrint} onChange={e => setPiecesPerPrint(e.target.value)} placeholder="1" className="input-field" />
+            </div>
+          )}
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label className="label-technical" style={{ display: 'block', marginBottom: '6px' }}>Changed Note</label>
+            <textarea rows={3} value={note} onChange={e => setNote(e.target.value)} placeholder="Describe the geometric refinements or parameter adjustments..." className="input-field" style={{ resize: 'none' }} />
+          </div>
           {previewFilename && (
-            <div className="rounded-xl border overflow-hidden">
-              <div className="bg-gray-900 px-4 py-3">
-                <p className="text-xs text-gray-500 mb-1">Will be saved as</p>
-                <p className="font-mono text-sm text-green-400">{previewFilename}</p>
+            <div style={{ gridColumn: '1 / -1', borderRadius: '8px', border: '1px solid var(--c-border)', overflow: 'hidden' }}>
+              <div style={{ padding: '10px 14px', background: 'var(--c-surface-low)', borderBottom: '1px solid var(--c-border-soft)' }}>
+                <p className="label-technical" style={{ marginBottom: '3px' }}>Will be saved as</p>
+                <p style={{ fontFamily: '"Space Grotesk", monospace', fontSize: '0.8125rem', color: '#4ade80', wordBreak: 'break-all' }}>{previewFilename}</p>
               </div>
-              <div className={`px-4 py-2 text-xs ${existingSlot ? 'bg-amber-50 text-amber-700' : 'bg-green-50 text-green-700'}`}>
-                {existingSlot
-                  ? `Updates existing file → creates v${String(nextVersion).padStart(2, '0')} (currently at v${String(existingSlot.versionCount).padStart(2, '0')})`
-                  : 'New file — will appear as a new row'}
+              <div style={{ padding: '8px 14px', fontSize: '0.75rem', fontWeight: 500, background: existingSlot ? 'rgba(251,146,60,0.08)' : 'rgba(141,169,196,0.08)', color: existingSlot ? '#fb923c' : 'var(--c-carolina)' }}>
+                {existingSlot ? `Updates existing file → creates v${String(nextVersion).padStart(2, '0')} (at v${String(existingSlot.versionCount).padStart(2, '00')})` : 'New file — will appear as a new row'}
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
 
-      {/* Upload progress */}
+      {/* Progress */}
       {isUploading && (
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Loader2 size={14} className="animate-spin" />
+        <div style={{ padding: '14px 16px', background: 'var(--c-surface-low)', border: '1px solid var(--c-border)', borderRadius: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.875rem', color: 'var(--c-text-secondary)', marginBottom: '8px' }}>
+            <Loader2 size={15} className="animate-spin" style={{ color: 'var(--c-carolina)' }} />
             Saving... {progress}%
           </div>
-          <div className="w-full bg-gray-100 rounded-full h-1.5">
-            <div className="bg-blue-600 h-1.5 rounded-full transition-all" style={{ width: `${progress}%` }} />
+          <div style={{ height: '4px', borderRadius: '4px', background: 'var(--c-bg)', overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${progress}%`, background: 'linear-gradient(90deg, var(--c-primary) 0%, var(--c-carolina) 100%)', borderRadius: '4px', transition: 'width 0.3s ease-out' }} />
           </div>
         </div>
       )}
 
-      {/* Actions */}
-      <div className="flex gap-2 pt-1">
-        {onClose && (
-          <button onClick={onClose}
-            className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">
-            Cancel
+      {/* Footer */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--c-text-muted)' }}>
+          <Info size={12} />
+          Files will be encrypted before processing.
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          {onClose && <button onClick={onClose} className="btn-secondary">Cancel</button>}
+          <button onClick={handleSave} disabled={!canSave} className="btn-primary flex items-center gap-2">
+            {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+            {isUploading ? 'Saving...' : 'Upload and Process'}
           </button>
-        )}
-        <button
-          onClick={handleSave}
-          disabled={!canSave}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed ml-auto"
-        >
-          {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-          {isUploading ? 'Saving...' : 'Save File'}
-        </button>
+        </div>
       </div>
     </div>
   );
