@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import { format } from 'date-fns';
 import {
   Download, FileText, Package, Upload,
-  ChevronRight, ChevronDown, RotateCcw, Loader2,
+  ChevronRight, ChevronDown, RotateCcw, Loader2, Filter,
 } from 'lucide-react';
 import { useGetProductQuery } from '../features/products/productsApi.js';
 import { useGetPartFilesQuery, useGetFileVersionsQuery, useRollbackFileMutation } from '../features/files/filesApi.js';
@@ -14,24 +14,11 @@ import FileViewer from '../components/FileViewer/FileViewer.jsx';
 import axiosInstance from '../api/axiosInstance.js';
 import toast from 'react-hot-toast';
 
+/* ── Helpers ─────────────────────────────────────────────────── */
 function formatBytes(bytes) {
   if (!bytes) return '—';
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-}
-
-function FileTypeTag({ type }) {
-  const colors = {
-    stl:   'bg-purple-100 text-purple-700',
-    step:  'bg-green-100 text-green-700',
-    gcode: 'bg-orange-100 text-orange-700',
-    other: 'bg-gray-100 text-gray-600',
-  };
-  return (
-    <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${colors[type] || colors.other}`}>
-      .{type}
-    </span>
-  );
 }
 
 async function downloadViaApi(url, filename) {
@@ -48,7 +35,35 @@ async function downloadViaApi(url, filename) {
   }
 }
 
-// ── Inline version rows ──────────────────────────────────────────────────────
+/* ── File type badge — matches Stitch dark tint style ─────────── */
+function FileTypeTag({ type }) {
+  const map = {
+    stl:   { bg: 'rgba(139, 92, 246, 0.12)', color: '#a78bfa' },
+    step:  { bg: 'rgba(34, 197, 94, 0.12)',  color: '#4ade80' },
+    obj:   { bg: 'rgba(34, 197, 94, 0.12)',  color: '#4ade80' },
+    gcode: { bg: 'rgba(249, 115, 22, 0.12)', color: '#fb923c' },
+    other: { bg: 'var(--c-surface-low)',      color: 'var(--c-text-secondary)' },
+  };
+  const s = map[type] || map.other;
+  return (
+    <span
+      style={{
+        background: s.bg,
+        color: s.color,
+        fontSize: '0.6875rem',
+        fontFamily: '"Space Grotesk", monospace',
+        fontWeight: 600,
+        padding: '2px 7px',
+        borderRadius: '4px',
+        letterSpacing: '0.03em',
+      }}
+    >
+      .{type?.toUpperCase()}
+    </span>
+  );
+}
+
+/* ── Inline version rows ─────────────────────────────────────── */
 function VersionRows({ asset }) {
   const { data, isLoading } = useGetFileVersionsQuery({ fileAssetId: asset._id });
   const [rollback, { isLoading: isRollingBack }] = useRollbackFileMutation();
@@ -56,8 +71,8 @@ function VersionRows({ asset }) {
   if (isLoading) {
     return (
       <tr>
-        <td colSpan={6} className="pl-12 py-2 text-xs text-gray-400">
-          <Loader2 size={12} className="inline animate-spin mr-1" /> Loading versions…
+        <td colSpan={6} style={{ paddingLeft: '48px', paddingTop: '8px', paddingBottom: '8px', fontSize: '0.75rem', color: 'var(--c-text-muted)' }}>
+          <Loader2 size={11} className="inline animate-spin mr-1" /> Loading versions…
         </td>
       </tr>
     );
@@ -88,44 +103,59 @@ function VersionRows({ asset }) {
       {versions.map((v) => {
         const isCurrent = String(v._id) === currentVersionId;
         return (
-          <tr key={v._id} className={`border-b border-gray-100 ${isCurrent ? 'bg-blue-50' : 'bg-gray-50'}`}>
-            <td className="pl-10 pr-2 py-2" colSpan={2}>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-px bg-gray-300 shrink-0" />
-                <span className={`font-mono text-xs font-bold ${isCurrent ? 'text-blue-600' : 'text-gray-500'}`}>
+          <tr
+            key={v._id}
+            style={{
+              background: isCurrent ? 'rgba(19, 64, 116, 0.12)' : 'var(--c-surface-low)',
+              borderBottom: '1px solid var(--c-border-soft)',
+            }}
+          >
+            <td style={{ paddingLeft: '48px', paddingRight: '8px', paddingTop: '7px', paddingBottom: '7px' }} colSpan={2}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '16px', height: '1px', background: 'var(--c-border-soft)', flexShrink: 0 }} />
+                <span style={{
+                  fontFamily: '"Space Grotesk", monospace',
+                  fontSize: '0.6875rem',
+                  fontWeight: 700,
+                  color: isCurrent ? 'var(--c-carolina)' : 'var(--c-text-secondary)',
+                }}>
                   v{String(v.versionNumber).padStart(2, '0')}
                 </span>
                 {isCurrent && (
-                  <span className="text-xs bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded">current</span>
+                  <span style={{ fontSize: '0.625rem', background: 'rgba(141, 169, 196, 0.15)', color: 'var(--c-carolina)', padding: '1px 6px', borderRadius: '3px', fontWeight: 600 }}>
+                    ACTIVE
+                  </span>
                 )}
-                <span className="font-mono text-xs text-gray-400 truncate max-w-[180px]">{versionName(v)}</span>
+                <span style={{ fontFamily: '"Inter", monospace', fontSize: '0.6875rem', color: 'var(--c-text-muted)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {v.uploadedBy?.displayName && `by ${v.uploadedBy.displayName} · `}
+                  {v.createdAt ? format(new Date(v.createdAt), 'MMM d · HH:mm') : ''}
+                </span>
               </div>
             </td>
-            <td className="px-3 py-2 text-xs text-gray-400">{formatBytes(v.fileSizeBytes)}</td>
-            <td className="px-3 py-2 text-xs text-gray-400">
-              {format(new Date(v.createdAt), 'MMM d, yyyy · HH:mm')}
-              {v.uploadedBy?.displayName && (
-                <span className="ml-2 text-gray-300">· {v.uploadedBy.displayName}</span>
-              )}
-            </td>
-            <td className="px-3 py-2 text-xs font-mono text-gray-300">{v.contentHash?.slice(0, 8)}</td>
-            <td className="px-3 py-2">
-              <div className="flex gap-1">
+            <td style={{ padding: '7px 12px', fontSize: '0.6875rem', color: 'var(--c-text-muted)', fontFamily: '"Inter", sans-serif' }}>{formatBytes(v.fileSizeBytes)}</td>
+            <td style={{ padding: '7px 12px', fontFamily: '"Space Grotesk", monospace', fontSize: '0.6875rem', color: 'var(--c-text-secondary)' }}>{v.contentHash?.slice(0, 8)}</td>
+            <td style={{ padding: '7px 12px' }}></td>
+            <td style={{ padding: '7px 12px' }}>
+              <div style={{ display: 'flex', gap: '4px' }}>
                 <button
                   onClick={() => downloadViaApi(`/files/${asset._id}/download`, versionName(v))}
                   title="Download"
-                  className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                  style={{ padding: '4px', color: 'var(--c-text-muted)', borderRadius: '4px', transition: 'color 0.2s' }}
+                  onMouseEnter={e => e.currentTarget.style.color = 'var(--c-carolina)'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'var(--c-text-muted)'}
                 >
-                  <Download size={13} />
+                  <Download size={12} />
                 </button>
                 {!isCurrent && (
                   <button
                     onClick={() => handleRestore(v)}
                     disabled={isRollingBack}
                     title="Restore"
-                    className="p-1 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded disabled:opacity-40"
+                    style={{ padding: '4px', color: 'var(--c-text-muted)', borderRadius: '4px' }}
+                    onMouseEnter={e => e.currentTarget.style.color = '#fb923c'}
+                    onMouseLeave={e => e.currentTarget.style.color = 'var(--c-text-muted)'}
                   >
-                    <RotateCcw size={13} />
+                    <RotateCcw size={12} />
                   </button>
                 )}
               </div>
@@ -137,7 +167,7 @@ function VersionRows({ asset }) {
   );
 }
 
-// ── File row ─────────────────────────────────────────────────────────────────
+/* ── File row ────────────────────────────────────────────────── */
 function FileAssetRow({ asset, isSelected, onSelect }) {
   const [expanded, setExpanded] = useState(false);
   const hasVersions = asset.versionCount > 1;
@@ -146,86 +176,98 @@ function FileAssetRow({ asset, isSelected, onSelect }) {
     <>
       <tr
         onClick={() => onSelect(asset)}
-        className={`text-sm border-b border-gray-100 cursor-pointer transition-colors
-          ${isSelected ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50'}`}
+        style={{
+          background: isSelected ? 'rgba(19, 64, 116, 0.12)' : 'transparent',
+          borderBottom: '1px solid var(--c-border-soft)',
+          cursor: 'pointer',
+          transition: 'background 0.15s',
+        }}
+        onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--c-surface-low)'; }}
+        onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
       >
         {/* Chevron + filename */}
-        <td className="px-3 py-3">
-          <div className="flex items-center gap-2">
+        <td style={{ padding: '10px 12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <button
               onClick={(e) => { e.stopPropagation(); hasVersions && setExpanded(!expanded); }}
-              className={`shrink-0 p-0.5 rounded hover:bg-gray-200 transition ${hasVersions ? 'text-gray-400' : 'text-transparent pointer-events-none'}`}
+              style={{
+                padding: '2px',
+                borderRadius: '3px',
+                color: hasVersions ? 'var(--c-text-secondary)' : 'transparent',
+                pointerEvents: hasVersions ? 'auto' : 'none',
+                flexShrink: 0,
+                transition: 'color 0.2s',
+              }}
             >
-              {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
             </button>
-            <span className="font-mono text-xs text-gray-800 truncate max-w-[200px]">
+            <span style={{ fontFamily: '"Space Grotesk", monospace', fontSize: '0.8125rem', color: 'var(--c-text)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {asset.canonicalName}
             </span>
           </div>
         </td>
-
-        <td className="px-3 py-3"><FileTypeTag type={asset.fileType} /></td>
-
-        <td className="px-3 py-3 text-xs">
-          <span className="font-mono font-bold text-gray-700">
-            v{String(asset.currentVersion?.versionNumber || 0).padStart(2, '0')}
-          </span>
+        <td style={{ padding: '10px 12px' }}><FileTypeTag type={asset.fileType} /></td>
+        <td style={{ padding: '10px 12px' }}>
+          <span className="badge-version">v{String(asset.currentVersion?.versionNumber || 0).padStart(2, '0')}</span>
           {asset.versionCount > 1 && (
-            <span className="ml-1.5 text-gray-400">({asset.versionCount})</span>
+            <span style={{ marginLeft: '6px', fontSize: '0.6875rem', color: 'var(--c-text-muted)' }}>({asset.versionCount})</span>
           )}
         </td>
-
-        <td className="px-3 py-3 text-xs text-gray-400">{formatBytes(asset.totalStorageBytes)}</td>
-
-        <td className="px-3 py-3 text-xs text-gray-400">
-          {asset.currentVersion?.createdAt
-            ? format(new Date(asset.currentVersion.createdAt), 'MMM d, HH:mm')
-            : '—'}
+        <td style={{ padding: '10px 12px', fontSize: '0.8125rem', color: 'var(--c-text-muted)', fontFamily: '"Inter", sans-serif' }}>{formatBytes(asset.totalStorageBytes)}</td>
+        <td style={{ padding: '10px 12px', fontSize: '0.8125rem', color: 'var(--c-text-muted)', fontFamily: '"Inter", sans-serif' }}>
+          {asset.currentVersion?.createdAt ? format(new Date(asset.currentVersion.createdAt), 'MMM d, HH:mm') : '—'}
         </td>
-
-        <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+        <td style={{ padding: '10px 12px' }} onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => downloadViaApi(`/files/${asset._id}/download`, asset.canonicalName)}
             title="Download latest"
-            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+            style={{ padding: '5px', color: 'var(--c-text-muted)', borderRadius: '4px' }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--c-carolina)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--c-text-muted)'}
           >
             <Download size={14} />
           </button>
         </td>
       </tr>
-
       {expanded && <VersionRows asset={asset} />}
     </>
   );
 }
 
-// ── Part file list ────────────────────────────────────────────────────────────
+/* ── File directory panel ────────────────────────────────────── */
 function PartFiles({ partId, selectedAsset, onSelectAsset }) {
   const { data: fileAssets = [], isLoading } = useGetPartFilesQuery(partId, { skip: !partId });
 
-  if (isLoading) return <div className="p-6 text-gray-400 text-sm">Loading files…</div>;
+  if (isLoading) return (
+    <div style={{ padding: '24px', color: 'var(--c-text-muted)', fontSize: '0.875rem' }}>Loading files…</div>
+  );
 
   if (fileAssets.length === 0) return (
-    <div className="flex-1 flex items-center justify-center text-gray-400">
-      <div className="text-center">
-        <FileText size={40} className="mx-auto mb-3 opacity-30" />
-        <p className="text-sm">No files uploaded yet.</p>
-        <p className="text-xs mt-1 text-gray-300">Click Upload File to add one.</p>
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--c-text-muted)' }}>
+      <div style={{ textAlign: 'center' }}>
+        <FileText size={36} style={{ margin: '0 auto 12px', opacity: 0.25 }} />
+        <p style={{ fontSize: '0.875rem' }}>No files uploaded yet.</p>
       </div>
     </div>
   );
 
   return (
-    <div className="flex-1 overflow-auto">
-      <table className="w-full border-collapse">
-        <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide sticky top-0 z-10">
+    <div style={{ flex: 1, overflow: 'auto' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--c-surface-low)' }}>
           <tr>
-            <th className="px-3 py-2 text-left">Filename</th>
-            <th className="px-3 py-2 text-left">Type</th>
-            <th className="px-3 py-2 text-left">Ver</th>
-            <th className="px-3 py-2 text-left">Size</th>
-            <th className="px-3 py-2 text-left">Updated</th>
-            <th className="px-3 py-2 text-left">DL</th>
+            {['FILENAME', 'TYPE', 'VER', 'SIZE', 'UPDATED', 'DL'].map(h => (
+              <th key={h} style={{
+                padding: '8px 12px',
+                textAlign: 'left',
+                fontSize: '0.625rem',
+                fontFamily: '"Inter", sans-serif',
+                fontWeight: 600,
+                letterSpacing: '0.08em',
+                color: 'var(--c-text-muted)',
+                borderBottom: '1px solid var(--c-border-soft)',
+              }}>{h}</th>
+            ))}
           </tr>
         </thead>
         <tbody>
@@ -243,7 +285,7 @@ function PartFiles({ partId, selectedAsset, onSelectAsset }) {
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+/* ── Page ────────────────────────────────────────────────────── */
 export default function ProductView() {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -252,41 +294,150 @@ export default function ProductView() {
 
   const { data, isLoading, isError } = useGetProductQuery(slug);
 
-  if (isLoading) return <div className="p-8 text-gray-400">Loading…</div>;
-  if (isError)   return <div className="p-8 text-red-500">Product not found.</div>;
+  if (isLoading) return (
+    <div style={{ padding: '32px', color: 'var(--c-text-muted)', fontFamily: '"Inter", sans-serif' }}>Loading…</div>
+  );
+  if (isError) return (
+    <div style={{ padding: '32px', color: '#f87171' }}>Product not found.</div>
+  );
 
   const { product } = data;
 
   return (
-    <div className="h-screen flex flex-col">
+    <div style={{ height: 'calc(100vh - 56px)', display: 'flex', flexDirection: 'column', background: 'var(--c-bg)' }}>
 
-      {/* Top bar */}
-      <div className="border-b px-4 py-3 bg-white flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/')} className="text-gray-400 hover:text-gray-600 text-sm">
+      {/* ── Top bar — matches Stitch: breadcrumb + commit CTA ── */}
+      <div
+        className="glass-panel"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 20px',
+          height: '48px',
+          flexShrink: 0,
+          borderTop: 'none',
+          borderLeft: 'none',
+          borderRight: 'none',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button
+            onClick={() => navigate('/')}
+            style={{ fontSize: '0.8125rem', color: 'var(--c-text-muted)', cursor: 'pointer', transition: 'color 0.2s' }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--c-text)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--c-text-muted)'}
+          >
             ← Projects
           </button>
-          <span className="text-gray-300">/</span>
-          <h1 className="font-semibold text-gray-900">{product.name}</h1>
+          <span style={{ color: 'var(--c-border)', fontSize: '1.2rem', lineHeight: 1 }}>/</span>
+          <h1
+            style={{
+              fontFamily: '"Space Grotesk", sans-serif',
+              fontWeight: 700,
+              fontSize: '0.9375rem',
+              color: 'var(--c-text)',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            {product.name}
+          </h1>
+          {product.slug && (
+            <span className="badge-version">{product.slug}</span>
+          )}
         </div>
+
         <button
           onClick={() => navigate(`/products/${slug}/upload`)}
-          className="flex items-center gap-2 text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700"
+          className="btn-primary flex items-center gap-2"
+          style={{ padding: '7px 16px', fontSize: '0.75rem' }}
         >
-          <Upload size={14} /> Upload File
+          <Upload size={13} strokeWidth={2.5} />
+          Upload File
         </button>
       </div>
 
-      {/* Body — 3-panel layout */}
-      <div className="flex-1 flex overflow-hidden">
+      {/* ── Body — 3-Column Grid matching Stitch layout ─────── */}
+      <div style={{ flex: 1, overflow: 'hidden', display: 'flex', gap: '0', background: 'var(--c-bg)' }}>
 
-        {/* Panel 1: Project tree */}
-        <div className="w-52 border-r bg-white overflow-hidden flex-shrink-0">
+        {/* LEFT: Project Tree — sidebar-zone, no border (tonal) */}
+        <div
+          className="sidebar-zone"
+          style={{
+            width: '240px',
+            flexShrink: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            borderRight: '1px solid var(--c-border-soft)',
+          }}
+        >
           <ProjectTree product={product} />
         </div>
 
-        {/* Panel 2: File list */}
-        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        {/* CENTER: 3D Viewer — full height, dark canvas */}
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            background: selectedAsset ? 'var(--c-surface-low)' : 'var(--c-bg)',
+            borderRight: '1px solid var(--c-border-soft)',
+          }}
+        >
+          {selectedAsset ? (
+            <FileViewer
+              asset={selectedAsset}
+              onClose={() => setSelectedAsset(null)}
+            />
+          ) : (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ textAlign: 'center', padding: '24px' }}>
+                <Package
+                  size={48}
+                  style={{ margin: '0 auto 16px', opacity: 0.15, color: 'var(--c-carolina)' }}
+                />
+                <p style={{ fontFamily: '"Space Grotesk", sans-serif', fontWeight: 600, fontSize: '0.9375rem', color: 'var(--c-text-secondary)', marginBottom: '4px' }}>
+                  No file selected
+                </p>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--c-text-muted)' }}>
+                  Select a file from the directory to preview its 3D model
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT: File Directory + Metadata Panel */}
+        <div
+          style={{
+            width: '380px',
+            flexShrink: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            background: 'var(--c-surface)',
+          }}
+        >
+          {/* Directory header */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '10px 16px',
+              borderBottom: '1px solid var(--c-border-soft)',
+              flexShrink: 0,
+            }}
+          >
+            <span className="label-technical">File Directory</span>
+            <button style={{ color: 'var(--c-text-muted)', padding: '3px' }}>
+              <Filter size={12} />
+            </button>
+          </div>
+
           {selectedPartId ? (
             <PartFiles
               partId={selectedPartId}
@@ -296,24 +447,14 @@ export default function ProductView() {
               }
             />
           ) : (
-            <div className="flex-1 flex items-center justify-center text-gray-400">
-              <div className="text-center">
-                <Package size={40} className="mx-auto mb-3 opacity-30" />
-                <p className="text-sm">Select a part from the left panel</p>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--c-text-muted)' }}>
+              <div style={{ textAlign: 'center', padding: '24px' }}>
+                <Package size={36} style={{ margin: '0 auto 10px', opacity: 0.2 }} />
+                <p style={{ fontSize: '0.875rem' }}>Select a part from the tree</p>
               </div>
             </div>
           )}
         </div>
-
-        {/* Panel 3: File viewer (only when an asset is selected) */}
-        {selectedAsset && (
-          <div className="w-80 flex-shrink-0 overflow-y-auto">
-            <FileViewer
-              asset={selectedAsset}
-              onClose={() => setSelectedAsset(null)}
-            />
-          </div>
-        )}
       </div>
     </div>
   );

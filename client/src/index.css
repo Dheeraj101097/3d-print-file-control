@@ -2,10 +2,281 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  margin: 0;
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
-  -webkit-font-smoothing: antialiased;
+/* ============================================================
+   PRECISION ARCHITECT — DESIGN SYSTEM
+   All colors sourced from Stitch project #14650366597231615429
+   To retheme: change only the values in :root and [data-theme='light']
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+@layer base {
+
+  /* ── DARK MODE (DEFAULT) ─────────────────────────────────── */
+  :root {
+    /* Base surfaces — sourced from Stitch namedColors (dark-adapted) */
+    --c-bg:                #0a1628;        /* deepest background */
+    --c-surface-low:       #0d1e35;        /* sidebar / structural zones */
+    --c-surface:           #102240;        /* card / panel background */
+    --c-surface-high:      #13315C;        /* raised surfaces / modals */
+    --c-surface-highest:   #1a3d6e;        /* highest elevation */
+
+    /* Text hierarchy */
+    --c-text:              #e8f0fb;        /* primary text (≈ on_surface light-adapted) */
+    --c-text-secondary:    #8DA9C4;        /* secondary / labels */
+    --c-text-muted:        #4d6b8a;        /* muted / placeholders */
+
+    /* Accent / Action — Yale Blue family */
+    --c-action:            #134074;        /* primary CTA background */
+    --c-action-hover:      #1a5296;        /* hover state */
+    --c-action-text:       #ffffff;        /* text on primary CTA */
+
+    /* Borders — "ghost border" rule: very subtle */
+    --c-border:            rgba(141, 169, 196, 0.12);  /* standard border */
+    --c-border-soft:       rgba(141, 169, 196, 0.07);  /* ultra-soft dividers */
+
+    /* Semantic */
+    --c-primary:           #002a54;        /* deepest primary */
+    --c-primary-container: #134074;        /* primary container */
+    --c-secondary:         #466179;
+    --c-carolina:          #8DA9C4;        /* Carolina Blue accent */
+
+    /* Glassmorphism tokens */
+    --c-glass-bg:          rgba(19, 49, 92, 0.60);
+    --c-glass-border:      rgba(141, 169, 196, 0.15);
+    --blur-glass:          20px;
+
+    /* Shadow — dark blue tint, no pure-black */
+    --shadow-ambient:      0px 12px 32px rgba(11, 37, 69, 0.35);
+    --shadow-card:         0px 4px 16px  rgba(11, 37, 69, 0.25);
+    --shadow-modal:        0px 20px 60px rgba(11, 37, 69, 0.55);
+  }
+
+  /* ── LIGHT MODE OVERRIDES ────────────────────────────────── */
+  :root[data-theme='light'] {
+    /* Stitch namedColors light palette */
+    --c-bg:                #f5fbf4;        /* surface / background */
+    --c-surface-low:       #eff5ee;        /* surface_container_low */
+    --c-surface:           #ffffff;        /* surface_container_lowest — "pop" */
+    --c-surface-high:      #e4eae3;        /* surface_container_high (recessed) */
+    --c-surface-highest:   #dee4dd;        /* surface_container_highest */
+
+    --c-text:              #171d19;        /* on_surface */
+    --c-text-secondary:    #43474f;        /* on_surface_variant */
+    --c-text-muted:        #737780;        /* outline */
+
+    --c-action:            #002a54;        /* primary */
+    --c-action-hover:      #134074;        /* primary_container */
+    --c-action-text:       #ffffff;
+
+    --c-border:            rgba(115, 119, 128, 0.20); /* outline_variant @ 20% */
+    --c-border-soft:       rgba(115, 119, 128, 0.10);
+
+    --c-primary:           #002a54;
+    --c-primary-container: #134074;
+    --c-secondary:         #466179;
+    --c-carolina:          #8DA9C4;
+
+    --c-glass-bg:          rgba(255, 255, 255, 0.70);
+    --c-glass-border:      rgba(115, 119, 128, 0.15);
+    --blur-glass:          20px;
+
+    --shadow-ambient:      0px 12px 32px rgba(11, 37, 69, 0.06);
+    --shadow-card:         0px 4px 16px  rgba(11, 37, 69, 0.05);
+    --shadow-modal:        0px 20px 60px rgba(11, 37, 69, 0.16);
+  }
+
+  /* ── MAP TO TAILWIND ALIASES (used throughout components) ── */
+  :root {
+    /* These bridge the raw CSS vars to Tailwind theme- classes */
+    --color-bg-global:      var(--c-bg);
+    --color-surface-high:   var(--c-surface);
+    --color-surface-mid:    var(--c-surface-high);
+    --color-surface-low:    var(--c-surface-low);
+    --color-text-primary:   var(--c-text);
+    --color-text-secondary: var(--c-text-secondary);
+    --color-text-muted:     var(--c-text-muted);
+    --color-action-primary: var(--c-action);
+    --color-action-hover:   var(--c-action-hover);
+    --color-border:         var(--c-border);
+    --color-border-soft:    var(--c-border-soft);
+  }
+
+  /* ── GLOBAL BASE STYLES ──────────────────────────────────── */
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--c-bg);
+    color: var(--c-text);
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Headings → Space Grotesk */
+  h1, h2, h3, h4, h5, h6, .font-display {
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  /* Technical label uppercase (metadata headers) */
+  .label-technical {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.625rem;      /* 10px */
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--c-text-muted);
+  }
+
+  /* ── SCROLLBAR ───────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--c-border);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-corner { background: transparent; }
+}
+
+/* ── COMPONENT UTILITIES ─────────────────────────────────────── */
+@layer components {
+
+  /* Glass panel: nav, floating toolbars */
+  .glass-panel {
+    background: var(--c-glass-bg);
+    backdrop-filter: blur(var(--blur-glass));
+    -webkit-backdrop-filter: blur(var(--blur-glass));
+    border: 1px solid var(--c-glass-border);
+  }
+
+  /* Primary CTA — gradient from Stitch design doc */
+  .btn-primary {
+    background: linear-gradient(135deg, var(--c-primary) 0%, var(--c-primary-container) 100%);
+    color: var(--c-action-text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-radius: 8px;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+    box-shadow: 0 4px 14px rgba(2, 42, 84, 0.4);
+  }
+  .btn-primary:hover { opacity: 0.92; transform: translateY(-1px); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+  /* Secondary CTA */
+  .btn-secondary {
+    background: var(--c-surface-low);
+    color: var(--c-text-secondary);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8125rem;
+    border-radius: 8px;
+    border: 1px solid var(--c-border);
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .btn-secondary:hover {
+    background: var(--c-surface-high);
+    color: var(--c-text);
+  }
+
+  /* Input — minimalist, near-invisible border */
+  .input-field {
+    background: var(--c-surface-low);
+    color: var(--c-text);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.875rem;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .input-field::placeholder {
+    color: var(--c-text-muted);
+    font-style: normal;
+  }
+  .input-field:focus {
+    border-color: var(--c-action);
+    box-shadow: 0 0 0 3px rgba(19, 64, 116, 0.25);
+  }
+
+  /* Card — no border, tonal elevation */
+  .card {
+    background: var(--c-surface);
+    border-radius: 12px;
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Card with explicit ghost border (accessibility fallback) */
+  .card-bordered {
+    background: var(--c-surface);
+    border-radius: 12px;
+    border: 1px solid var(--c-border);
+  }
+
+  /* Nav tab link */
+  .nav-tab {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--c-text-secondary);
+    padding: 4px 0;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .nav-tab:hover { color: var(--c-text); }
+  .nav-tab.active {
+    color: var(--c-text);
+    border-bottom-color: var(--c-carolina);
+  }
+
+  /* Version / tag badge */
+  .badge-version {
+    font-family: 'Space Grotesk', monospace;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    background: var(--c-surface-high);
+    color: var(--c-carolina);
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.03em;
+  }
+
+  /* Sidebar structural zone — uses surface_container_low */
+  .sidebar-zone {
+    background: var(--c-surface-low);
+  }
+}
+
+/* ── ANIMATION UTILITIES ─────────────────────────────────────── */
+@layer utilities {
+  .transition-theme {
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.25s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
 }
 
 #root {

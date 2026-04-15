@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useLoginMutation, useRegisterMutation } from '../features/auth/authApi.js';
 import { setCredentials } from '../features/auth/authSlice.js';
@@ -28,63 +28,155 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="bg-white rounded-xl shadow-md p-8 w-full max-w-sm">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">PrintVCS</h1>
-          <p className="text-sm text-gray-500 mt-1">
+    <div
+      style={{
+        minHeight: '100vh',
+        background: 'var(--c-bg)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        position: 'relative',
+        overflow: 'hidden',
+        fontFamily: '"Inter", sans-serif',
+      }}
+    >
+      {/* Ambient glow — matches Stitch dark atmosphere */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '480px',
+          height: '480px',
+          background: 'radial-gradient(circle, rgba(19, 64, 116, 0.30) 0%, transparent 70%)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      <div
+        className="glass-panel animate-fade-in"
+        style={{
+          width: '100%',
+          maxWidth: '380px',
+          borderRadius: '16px',
+          padding: '0',
+          overflow: 'hidden',
+          position: 'relative',
+          zIndex: 1,
+          boxShadow: 'var(--shadow-modal)',
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            padding: '28px 28px 20px',
+            borderBottom: '1px solid var(--c-border-soft)',
+            background: 'linear-gradient(135deg, rgba(19, 64, 116, 0.15) 0%, transparent 100%)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+            <div
+              style={{
+                width: '28px', height: '28px', borderRadius: '8px',
+                background: 'linear-gradient(135deg, var(--c-primary) 0%, var(--c-primary-container) 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <span style={{ color: '#fff', fontSize: '0.75rem', fontWeight: 700 }}>P</span>
+            </div>
+            <h1
+              style={{
+                fontFamily: '"Space Grotesk", sans-serif',
+                fontWeight: 700,
+                fontSize: '1.25rem',
+                color: 'var(--c-text)',
+                letterSpacing: '-0.03em',
+              }}
+            >
+              PrintVCS
+            </h1>
+          </div>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--c-text-secondary)' }}>
             Version control for 3D printing assets
           </p>
         </div>
 
-        <div className="flex rounded-lg bg-gray-100 p-1 mb-6">
-          <button
-            onClick={() => setIsRegister(false)}
-            className={`flex-1 py-1.5 text-sm rounded-md transition ${!isRegister ? 'bg-white shadow font-medium' : 'text-gray-500'}`}
-          >
-            Login
-          </button>
-          <button
-            onClick={() => setIsRegister(true)}
-            className={`flex-1 py-1.5 text-sm rounded-md transition ${isRegister ? 'bg-white shadow font-medium' : 'text-gray-500'}`}
-          >
-            Register
-          </button>
+        {/* Tab switcher — matches Stitch segment control */}
+        <div style={{ display: 'flex', padding: '16px 28px 0' }}>
+          {['Login', 'Register'].map((label, i) => {
+            const active = (i === 0 && !isRegister) || (i === 1 && isRegister);
+            return (
+              <button
+                key={label}
+                type="button"
+                onClick={() => setIsRegister(i === 1)}
+                style={{
+                  flex: 1,
+                  padding: '8px 0',
+                  fontSize: '0.8125rem',
+                  fontFamily: '"Inter", sans-serif',
+                  fontWeight: active ? 600 : 400,
+                  color: active ? 'var(--c-text)' : 'var(--c-text-muted)',
+                  borderBottom: active ? '2px solid var(--c-carolina)' : '2px solid transparent',
+                  background: 'none',
+                  cursor: 'pointer',
+                  transition: 'color 0.2s, border-color 0.2s',
+                  marginBottom: '-1px',
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
+        <div style={{ height: '1px', background: 'var(--c-border-soft)', margin: '0 0 24px' }} />
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={{ padding: '0 28px 28px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {isRegister && (
-            <input
-              type="text"
-              placeholder="Display name"
-              required
-              value={form.displayName}
-              onChange={(e) => setForm({ ...form, displayName: e.target.value })}
-              className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <div>
+              <label className="label-technical" style={{ display: 'block', marginBottom: '6px' }}>Display Name</label>
+              <input
+                type="text"
+                placeholder="Your full name"
+                required
+                value={form.displayName}
+                onChange={(e) => setForm({ ...form, displayName: e.target.value })}
+                className="input-field"
+              />
+            </div>
           )}
-          <input
-            type="email"
-            placeholder="Email"
-            required
-            value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            required
-            value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-            className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <div>
+            <label className="label-technical" style={{ display: 'block', marginBottom: '6px' }}>Email Address</label>
+            <input
+              type="email"
+              placeholder="you@company.com"
+              required
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              className="input-field"
+            />
+          </div>
+          <div>
+            <label className="label-technical" style={{ display: 'block', marginBottom: '6px' }}>Password</label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              required
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              className="input-field"
+            />
+          </div>
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-2 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="btn-primary"
+            style={{ marginTop: '8px', width: '100%', justifyContent: 'center' }}
           >
-            {isLoading ? 'Loading...' : isRegister ? 'Create Account' : 'Login'}
+            {isLoading ? 'Processing…' : isRegister ? 'Create Account' : 'Sign In'}
           </button>
         </form>
       </div>

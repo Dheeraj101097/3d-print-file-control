@@ -98,7 +98,10 @@ export default function FileViewer({ asset, onClose }) {
       const h = container.clientHeight || 340;
 
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x0e0e1a);
+      // Uses the literal hex variable matching our background so the 3D canvas blends
+      // But in ThreeJS we must set it explicitly rather than via CSS classes
+      // 0x0B2545 is the Space Cadet hex mapping.
+      scene.background = new THREE.Color(0x0b2545);
 
       const camera = new THREE.PerspectiveCamera(45, w / h, 0.01, 100000);
 
@@ -116,7 +119,7 @@ export default function FileViewer({ asset, onClose }) {
       controls.dampingFactor = 0.06;
 
       // Grid
-      const grid = new THREE.GridHelper(300, 30, 0x2a2a44, 0x1e1e33);
+      const grid = new THREE.GridHelper(300, 30, 0x13315c, 0x0e2a4d);
       scene.add(grid);
 
       // Lights
@@ -124,7 +127,7 @@ export default function FileViewer({ asset, onClose }) {
       const sun = new THREE.DirectionalLight(0xffffff, 1.3);
       sun.position.set(100, 200, 150);
       scene.add(sun);
-      const fill = new THREE.DirectionalLight(0x6688ff, 0.35);
+      const fill = new THREE.DirectionalLight(0x134074, 0.35); // Slight yale blue fill
       fill.position.set(-80, -40, -80);
       scene.add(fill);
 
@@ -140,7 +143,7 @@ export default function FileViewer({ asset, onClose }) {
         geo.center();
 
         const mat = new THREE.MeshPhongMaterial({
-          color: 0x4a9eff,
+          color: 0x8da9c4,
           emissive: 0x0a1833,
           specular: 0x333333,
           shininess: 50,
@@ -165,7 +168,7 @@ export default function FileViewer({ asset, onClose }) {
         if (extruding.length) {
           const geo = new THREE.BufferGeometry();
           geo.setAttribute('position', new THREE.BufferAttribute(extruding, 3));
-          const mat = new THREE.LineBasicMaterial({ color: 0x00e676 });
+          const mat = new THREE.LineBasicMaterial({ color: 0x8da9c4 });
           const obj = new THREE.LineSegments(geo, mat);
           scene.add(obj);
           lines.push(obj);
@@ -174,7 +177,7 @@ export default function FileViewer({ asset, onClose }) {
         if (traveling.length) {
           const geo = new THREE.BufferGeometry();
           geo.setAttribute('position', new THREE.BufferAttribute(traveling, 3));
-          const mat = new THREE.LineBasicMaterial({ color: 0x334488, transparent: true, opacity: 0.25 });
+          const mat = new THREE.LineBasicMaterial({ color: 0x134074, transparent: true, opacity: 0.25 });
           const obj = new THREE.LineSegments(geo, mat);
           scene.add(obj);
           lines.push(obj);
@@ -238,29 +241,28 @@ export default function FileViewer({ asset, onClose }) {
   const meta = asset.currentVersion?.gcodeMetadata;
 
   return (
-    <div className="flex flex-col h-full bg-gray-950 border-l border-gray-800 select-none">
-
+    <div className="flex flex-col h-full bg-theme-bg select-none">
       {/* ── Header ── */}
-      <div className="flex items-start justify-between px-3 py-2.5 bg-gray-900 border-b border-gray-800 shrink-0">
+      <div className="flex items-start justify-between px-3 py-2.5 bg-theme-surface-low border-b border-theme-border-soft shrink-0">
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-mono text-gray-100 truncate leading-tight">{asset.canonicalName}</p>
+          <p className="text-xs font-mono text-theme-text truncate leading-tight">{asset.canonicalName}</p>
           <div className="flex items-center gap-2 mt-1">
             <span className={`text-xs px-1.5 py-0.5 rounded font-mono font-semibold ${
-              asset.fileType === 'stl'   ? 'bg-purple-950 text-purple-300' :
-              asset.fileType === 'gcode' ? 'bg-orange-950 text-orange-300' :
-                                           'bg-green-950 text-green-300'
+              asset.fileType === 'stl'   ? 'bg-purple-500/20 text-purple-400' :
+              asset.fileType === 'gcode' ? 'bg-orange-500/20 text-orange-400' :
+                                           'bg-green-500/20 text-green-400'
             }`}>.{asset.fileType}</span>
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-theme-text-secondary">
               v{String(asset.currentVersion?.versionNumber || 1).padStart(2, '0')}
             </span>
             {asset.versionCount > 1 && (
-              <span className="text-xs text-gray-600">{asset.versionCount} versions</span>
+              <span className="text-xs text-theme-text-muted">{asset.versionCount} versions</span>
             )}
           </div>
         </div>
         <button
           onClick={onClose}
-          className="ml-2 shrink-0 text-gray-600 hover:text-gray-300 p-0.5 rounded"
+          className="ml-2 shrink-0 text-theme-text-muted hover:text-theme-text p-0.5 rounded transition"
         >
           <X size={15} />
         </button>
@@ -270,25 +272,24 @@ export default function FileViewer({ asset, onClose }) {
       {isSupported && (
         <div
           ref={containerRef}
-          className="relative shrink-0"
-          style={{ height: 320 }}
+          className="relative shrink-0 flex-1 min-h-[320px]"
         >
           {status === 'loading' && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-950 text-gray-400 text-xs gap-2 z-10">
-              <Loader2 size={22} className="animate-spin text-blue-500" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-theme-bg text-theme-text-muted text-xs gap-2 z-10 custom-blur">
+              <Loader2 size={22} className="animate-spin text-theme-action" />
               <span>Loading {asset.fileType.toUpperCase()} preview…</span>
               {asset.totalStorageBytes > 4 * 1024 * 1024 && (
-                <span className="text-gray-600">Large file — may take a moment</span>
+                <span className="text-theme-text-secondary">Large file — may take a moment</span>
               )}
             </div>
           )}
           {status === 'error' && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-950 gap-2 z-10">
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-theme-bg gap-2 z-10">
               <AlertCircle size={22} className="text-red-500" />
               <span className="text-xs text-red-400">{errorMsg}</span>
               <button
                 onClick={buildScene}
-                className="text-xs text-blue-400 hover:underline flex items-center gap-1"
+                className="text-xs text-theme-action hover:underline flex items-center gap-1"
               >
                 <RotateCcw size={11} /> Retry
               </button>
@@ -299,35 +300,30 @@ export default function FileViewer({ asset, onClose }) {
 
       {/* STEP / unsupported */}
       {!isSupported && (
-        <div className="flex flex-col items-center justify-center py-10 text-gray-600 gap-2">
-          <Layers size={36} className="opacity-20" />
-          <p className="text-sm text-gray-500">No 3D preview for .{asset.fileType}</p>
-          <p className="text-xs text-gray-700">Export to STL to view in browser</p>
+        <div className="flex-1 flex flex-col items-center justify-center py-10 text-theme-text-muted gap-2 bg-theme-bg">
+          <Layers size={36} className="opacity-20 text-theme-text-secondary" />
+          <p className="text-sm text-theme-text-secondary">No 3D preview for .{asset.fileType}</p>
+          <p className="text-xs text-theme-text-muted">Export to STL to view in browser</p>
         </div>
       )}
 
       {/* ── GCODE metadata strip ── */}
       {asset.fileType === 'gcode' && meta && (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 px-3 py-2.5 bg-gray-900 border-t border-gray-800 shrink-0">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 px-3 py-2.5 bg-theme-surface-low border-t border-theme-border-soft shrink-0">
           {meta.estimatedPrintTimeSeconds > 0 && (
-            <Stat icon={<Clock size={10} className="text-blue-400" />}
-              label={formatSeconds(meta.estimatedPrintTimeSeconds)} />
+            <Stat icon={<Clock size={10} className="text-blue-400" />} label={formatSeconds(meta.estimatedPrintTimeSeconds)} />
           )}
           {meta.filamentUsedGrams > 0 && (
-            <Stat icon={<Layers size={10} className="text-green-400" />}
-              label={`${meta.filamentUsedGrams}g filament`} />
+            <Stat icon={<Layers size={10} className="text-green-400" />} label={`${meta.filamentUsedGrams}g filament`} />
           )}
           {meta.nozzleTemp > 0 && (
-            <Stat icon={<Thermometer size={10} className="text-orange-400" />}
-              label={`Nozzle ${meta.nozzleTemp}°C`} />
+            <Stat icon={<Thermometer size={10} className="text-orange-400" />} label={`Nozzle ${meta.nozzleTemp}°C`} />
           )}
           {meta.bedTemp > 0 && (
-            <Stat icon={<Thermometer size={10} className="text-red-400" />}
-              label={`Bed ${meta.bedTemp}°C`} />
+            <Stat icon={<Thermometer size={10} className="text-red-400" />} label={`Bed ${meta.bedTemp}°C`} />
           )}
           {meta.layerHeight > 0 && (
-            <Stat icon={<Layers size={10} className="text-purple-400" />}
-              label={`Layer ${meta.layerHeight}mm`} />
+            <Stat icon={<Layers size={10} className="text-purple-400" />} label={`Layer ${meta.layerHeight}mm`} />
           )}
           {meta.slicerName && (
             <Stat icon={null} label={meta.slicerName} dim />
@@ -336,8 +332,8 @@ export default function FileViewer({ asset, onClose }) {
       )}
 
       {/* ── Quick Actions ── */}
-      <div className="px-3 pt-3 pb-4 border-t border-gray-800 bg-gray-900 mt-auto shrink-0">
-        <p className="text-xs text-gray-600 font-semibold uppercase tracking-wider mb-2">Quick Actions</p>
+      <div className="px-3 pt-3 pb-4 border-t border-theme-border-soft bg-theme-surface mt-auto shrink-0">
+        <p className="text-xs text-theme-text-muted font-semibold uppercase tracking-wider mb-2">Quick Actions</p>
         <div className="grid grid-cols-2 gap-2">
           <QaButton
             icon={<Printer size={12} />}
@@ -372,7 +368,7 @@ export default function FileViewer({ asset, onClose }) {
         {asset.fileType === 'gcode' && (
           <button
             onClick={() => toast('Slicer report — coming soon', { icon: '⚙️' })}
-            className="mt-2 w-full flex items-center justify-center gap-1.5 px-2.5 py-2 bg-orange-900/40 hover:bg-orange-900/60 text-orange-300 text-xs rounded-lg border border-orange-900"
+            className="mt-2 w-full flex items-center justify-center gap-1.5 px-2.5 py-2 bg-theme-surface-low hover:bg-theme-surface-mid text-theme-text-secondary text-xs rounded-lg border border-theme-border-soft transition"
           >
             <Layers size={12} /> Check Slicer Stats
           </button>
@@ -386,7 +382,7 @@ export default function FileViewer({ asset, onClose }) {
 
 function Stat({ icon, label, dim }) {
   return (
-    <div className={`flex items-center gap-1.5 text-xs ${dim ? 'text-gray-600' : 'text-gray-300'}`}>
+    <div className={`flex items-center gap-1.5 text-xs ${dim ? 'text-theme-text-muted' : 'text-theme-text-primary'}`}>
       {icon}
       <span>{label}</span>
     </div>
@@ -394,9 +390,9 @@ function Stat({ icon, label, dim }) {
 }
 
 const COLOR_MAP = {
-  blue:  'bg-blue-700 hover:bg-blue-600 text-white',
-  green: 'bg-green-800 hover:bg-green-700 text-white',
-  gray:  'bg-gray-800 hover:bg-gray-700 text-gray-200',
+  blue:  'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30',
+  green: 'bg-green-600/20 text-green-400 hover:bg-green-600/30',
+  gray:  'bg-theme-surface-low text-theme-text-secondary hover:bg-theme-surface-mid border border-theme-border-soft',
 };
 
 function QaButton({ icon, label, color, onClick }) {
