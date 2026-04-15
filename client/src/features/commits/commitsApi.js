@@ -1,9 +1,10 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import getBaseUrl from '../../api/baseUrl.js';
 
 export const commitsApi = createApi({
   reducerPath: 'commitsApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: '/api',
+    baseUrl: getBaseUrl(),
     prepareHeaders: (headers) => {
       const token = localStorage.getItem('token');
       if (token) headers.set('Authorization', `Bearer ${token}`);

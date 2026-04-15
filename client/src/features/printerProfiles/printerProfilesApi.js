@@ -1,9 +1,10 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import getBaseUrl from '../../api/baseUrl.js';
 
 export const printerProfilesApi = createApi({
   reducerPath: 'printerProfilesApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: '/api/printer-profiles',
+    baseUrl: getBaseUrl('/printer-profiles'),
     prepareHeaders: (headers) => {
       const token = localStorage.getItem('token');
       if (token) headers.set('Authorization', `Bearer ${token}`);
